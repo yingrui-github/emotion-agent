@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/*
+ * 配色是「单色前景 + 不透明度」叠在底色上，所以主题切换只需换 fg / page 两个值：
+ * 墨色 3% 叠米白 = 浅灰卡片，与白色 3% 叠深底同构，89 处 fg/xx 调用点不用各写一份。
+ * @theme 里指向 var()，Tailwind 4 生成的 color-mix 在运行时解析，fg/35 这类修饰符照常可用。
+ */
+@theme {
+  --color-fg: var(--fg);
+  --color-page: var(--page);
+  --color-gold: var(--gold);
+  /* 亮色渐变按钮上的深色文字，两个主题都成立，不随主题变。 */
+  --color-ink: #07070f;
+  --font-display: "Songti SC", "STSong", "Noto Serif SC", serif;
+  --font-sans: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+/* 浅色是默认主题，所以挂在 :root 上 —— 首屏脚本没跑或没 JS 时也是这套。
+ * 必须写在 dark 之前：:root 和 [data-theme] 特异性相同，靠顺序决定谁覆盖谁。 */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --fg: #14121a;
+  --page: #faf8f4;
+  /* #e8c07a 在白底只有约 1.6:1，必须压深才够读。 */
+  --gold: #a8762a;
+  --page-glow: radial-gradient(1200px 600px at 50% -10%, #f0e4cc 0%, transparent 60%);
+  /* 模块 accent 是按深色底调的中间调，浅色下要压深。见 lib/modules.js 的 accentText。 */
+  --accent-shade: 28%;
+  --wx-wood: #1f9d55;
+  --wx-fire: #d0342c;
+  --wx-earth: #8a5a34;
+  --wx-metal: #9a7b12;
+  --wx-water: #1d6fc0;
+  /* 星盘的四元素。火水与五行同色，土偏暖褐、风取青，四色在白底都够读。 */
+  --el-fire: #d0342c;
+  --el-earth: #8a5a34;
+  --el-air: #2a8a86;
+  --el-water: #1d6fc0;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --fg: #ffffff;
+  --page: #07070f;
+  --gold: #e8c07a;
+  --page-glow: radial-gradient(1200px 600px at 50% -10%, #1d1836 0%, transparent 60%);
+  --accent-shade: 0%;
+  --wx-wood: #4ade80;
+  --wx-fire: #f87171;
+  --wx-earth: #a8734a;
+  --wx-metal: #e0c058;
+  --wx-water: #60a5fa;
+  --el-fire: #f87171;
+  --el-earth: #a8734a;
+  --el-air: #5eead4;
+  --el-water: #60a5fa;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 星空底：两层不同密度的星点，缓慢呼吸。只在深色主题下画，浅色下星点会显脏。 */
+[data-theme="dark"] .starfield::before,
+[data-theme="dark"] .starfield::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  z-index: 0;
+}
+
+[data-theme="dark"] .starfield::before {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 70% 15%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 45% 70%, rgba(232, 192, 122, 0.5), transparent),
+    radial-gradient(1px 1px at 85% 60%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 10% 85%, rgba(255, 255, 255, 0.3), transparent);
+  background-size: 520px 520px;
+  animation: twinkle 7s ease-in-out infinite;
+}
+
+[data-theme="dark"] .starfield::after {
+  background-image:
+    radial-gradient(1px 1px at 55% 40%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(1px 1px at 30% 60%, rgba(180, 190, 255, 0.3), transparent);
+  background-size: 300px 300px;
+  animation: twinkle 11s ease-in-out infinite reverse;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* 卡片 hover 时抬起并发光，光晕颜色由 --glow-color 行内注入（每个模块的主色） */
+.glow {
+  transition: box-shadow 0.35s, transform 0.35s, border-color 0.35s;
+}
+
+.glow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -14px var(--glow-color, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="dark"] .starfield::before,
+  [data-theme="dark"] .starfield::after {
+    animation: none;
+  }
+  .glow:hover {
+    transform: none;
+  }
+}
